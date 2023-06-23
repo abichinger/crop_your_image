@@ -7,6 +7,9 @@ typedef CornerDotBuilder = Widget Function(
 
 typedef CroppingAreaBuilder = Rect Function(Rect imageRect);
 
+typedef OverlayBuilder = Widget Function(
+    BuildContext context, Rect rect, double radius);
+
 enum CropStatus { nothing, loading, ready, cropping }
 
 /// Widget for the entry point of crop_your_image.
@@ -92,6 +95,9 @@ class Crop extends StatelessWidget {
   /// [false] by default.
   final bool interactive;
 
+  /// builder to place a widget inside the cropping area
+  final OverlayBuilder? overlayBuilder;
+
   const Crop({
     Key? key,
     required this.image,
@@ -112,6 +118,7 @@ class Crop extends StatelessWidget {
     this.fixArea = false,
     this.progressIndicator = const SizedBox.shrink(),
     this.interactive = false,
+    this.overlayBuilder,
   })  : assert((initialSize ?? 1.0) <= 1.0,
             'initialSize must be less than 1.0, or null meaning not specified.'),
         super(key: key);
@@ -144,6 +151,7 @@ class Crop extends StatelessWidget {
             fixArea: fixArea,
             progressIndicator: progressIndicator,
             interactive: interactive,
+            overlayBuilder: overlayBuilder,
           ),
         );
       },
@@ -170,6 +178,7 @@ class _CropEditor extends StatefulWidget {
   final bool fixArea;
   final Widget progressIndicator;
   final bool interactive;
+  final OverlayBuilder? overlayBuilder;
 
   const _CropEditor({
     Key? key,
@@ -191,6 +200,7 @@ class _CropEditor extends StatefulWidget {
     required this.fixArea,
     required this.progressIndicator,
     required this.interactive,
+    this.overlayBuilder,
   }) : super(key: key);
 
   @override
@@ -489,6 +499,17 @@ class _CropEditorState extends State<_CropEditor> {
                   ),
                 ),
               ),
+              if (widget.overlayBuilder != null)
+                Positioned.fromRect(
+                  rect: _rect,
+                  child: IgnorePointer(
+                    child: widget.overlayBuilder!(
+                      context,
+                      _rect,
+                      widget.radius,
+                    ),
+                  ),
+                ),
               IgnorePointer(
                 child: ClipPath(
                   clipper: _withCircleUi
